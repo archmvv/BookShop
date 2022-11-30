@@ -2,6 +2,8 @@ import java.awt.EventQueue;
 
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+
 import java.awt.BorderLayout;
 import java.awt.Font;
 import javax.swing.JPanel;
@@ -10,15 +12,20 @@ import javax.swing.JTextField;
 import javax.swing.JButton;
 import javax.swing.JTable;
 import javax.swing.JScrollPane;
+import java.sql.*;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 
 public class Bookshop {
 
 	private JFrame frame;
 	private JTextField txtbname;
-	private JTextField textField;
-	private JTextField textField_1;
+	private JTextField txtedition;
+	private JTextField txtprice;
 	private JTable table;
-	private JTextField textField_2;
+	private JTextField txtbid;
 
 	/**
 	 * Launch the application.
@@ -41,10 +48,50 @@ public class Bookshop {
 	 */
 	public Bookshop() {
 		initialize();
+		Connect();
+		table_load();
 	}
+	
+	
+	Connection con;
+	PreparedStatement pst;
+	ResultSet rs;
+	
+	public void Connect()
+	{
+		try 
+		{
+			Class.forName("com.mysql.cj.jdbc.Driver");
+			con = DriverManager.getConnection("jdbc:mysql://localhost/ javabookshop ","root","");
+		}
+		catch (ClassNotFoundException ex) 
+		{
+			
+		} catch (SQLException ex) 
+		{
+			
+		}
+	
+	}
+	
+	public void table_load()
 
+	{
+		try
+		{
+			pst = con.prepareStatement("select * from book");
+			rs = pst.executeQuery();
+			table.setModel (DbUtils.resultSetToTableModel (rs));
+		}
+		catch (SQLException e)
+		{
+			e.printStackTrace();
+		}
+	}
+	
+	
 	/**
-	 * Initialize the contents of the frame.
+	 * Initialise the contents of the frame.
 	 */
 	private void initialize() {
 		frame = new JFrame();
@@ -83,25 +130,72 @@ public class Bookshop {
 		panel.add(txtbname);
 		txtbname.setColumns(10);
 		
-		textField = new JTextField();
-		textField.setColumns(10);
-		textField.setBounds(155, 77, 160, 20);
-		panel.add(textField);
+		txtedition = new JTextField();
+		txtedition.setColumns(10);
+		txtedition.setBounds(155, 77, 160, 20);
+		panel.add(txtedition);
 		
-		textField_1 = new JTextField();
-		textField_1.setColumns(10);
-		textField_1.setBounds(155, 120, 160, 20);
-		panel.add(textField_1);
+		txtprice = new JTextField();
+		txtprice.setColumns(10);
+		txtprice.setBounds(155, 120, 160, 20);
+		panel.add(txtprice);
 		
 		JButton btnNewButton = new JButton("Save");
+		btnNewButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e)
+			{
+				String bname,edition,price;
+				
+				bname = txtbname.getText();
+				edition = txtedition.getText();
+				price = txtprice.getText();
+				
+				
+				try {
+					pst = con.prepareStatement("insert into book(name,edition,price) values(?,?,?)");
+					pst.setString(1, bname);
+					pst.setString(2, edition);
+					pst.setString(3, price);
+					pst.executeUpdate();
+					JOptionPane.showMessageDialog(null, "Record Added!");
+					table_load();
+					
+					txtbname.setText("");
+					txtedition.setText("");
+					txtprice.setText("");
+					txtbname.requestFocus();
+					
+				}
+				catch (SQLException e1) 
+				{
+					e1.printStackTrace();
+				}
+				
+				
+			}
+		});
 		btnNewButton.setBounds(10, 313, 110, 40);
 		frame.getContentPane().add(btnNewButton);
 		
 		JButton btnExit = new JButton("Exit");
+		btnExit.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				System.exit(0);
+			}
+		});
 		btnExit.setBounds(133, 313, 110, 40);
 		frame.getContentPane().add(btnExit);
 		
 		JButton btnNewButton_1_1 = new JButton("Clear");
+		btnNewButton_1_1.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				
+				txtbname.setText("");
+				txtedition.setText("");
+				txtprice.setText("");
+				txtbname.requestFocus();
+			}
+		});
 		btnNewButton_1_1.setBounds(258, 313, 110, 40);
 		frame.getContentPane().add(btnNewButton_1_1);
 		
@@ -118,10 +212,45 @@ public class Bookshop {
 		frame.getContentPane().add(panel_1);
 		panel_1.setLayout(null);
 		
-		textField_2 = new JTextField();
-		textField_2.setColumns(10);
-		textField_2.setBounds(103, 15, 212, 20);
-		panel_1.add(textField_2);
+		txtbid = new JTextField();
+		txtbid.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyReleased(KeyEvent e) {
+				
+				try {
+					String id= txtbid.getText();
+					
+					pst = con.prepareStatement("Select name, edition, price from book where id = ?");
+					pst.setString(1, id);
+					ResultSet rs = pst.executeQuery();
+					
+					if(rs.next()==true) 
+					{
+						String name = rs.getString(1);
+						String edition = rs.getString(2);
+						String price = rs.getString(3);
+						
+						txtbname.setText(name);
+						txtedition.setText(edition);
+						txtprice.setText(price);
+					}
+					else 
+					{
+						txtbname.setText("");
+						txtedition.setText("");
+						txtprice.setText("");
+					}
+					
+				}
+				catch(SQLException ex) {
+					
+				}
+				
+			}
+		});
+		txtbid.setColumns(10);
+		txtbid.setBounds(103, 15, 212, 20);
+		panel_1.add(txtbid);
 		
 		JLabel lblNewLabel_1_1_2 = new JLabel("Book ID");
 		lblNewLabel_1_1_2.setFont(new Font("Tahoma", Font.BOLD, 12));
@@ -129,10 +258,68 @@ public class Bookshop {
 		panel_1.add(lblNewLabel_1_1_2);
 		
 		JButton btnNewButton_1_1_1 = new JButton("Update");
+		btnNewButton_1_1_1.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				String bname,edition,price, bid;
+				
+				bname = txtbname.getText();
+				edition = txtedition.getText();
+				price = txtprice.getText();
+				bid = txtbid.getText();
+				
+				
+				try {
+					pst = con.prepareStatement("update book set name = ?,edition = ?, price = ? where id = ?");
+					pst.setString(1, bname);
+					pst.setString(2, edition);
+					pst.setString(3, price);
+					pst.setString(4, bid);
+					pst.executeUpdate();
+					JOptionPane.showMessageDialog(null, "Record Updated!");
+					table_load();
+					
+					txtbname.setText("");
+					txtedition.setText("");
+					txtprice.setText("");
+					txtbname.requestFocus();
+					
+				}
+				catch (SQLException e1) 
+				{
+					e1.printStackTrace();
+				}
+			}
+		});
 		btnNewButton_1_1_1.setBounds(446, 363, 110, 40);
 		frame.getContentPane().add(btnNewButton_1_1_1);
 		
 		JButton btnNewButton_1_1_1_1 = new JButton("Delete");
+		btnNewButton_1_1_1_1.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				String  bid;
+				
+				bid = txtbid.getText();
+				
+				
+				try {
+					pst = con.prepareStatement("delete from book where id = ?");
+					pst.setString(1, bid);
+					pst.executeUpdate();
+					JOptionPane.showMessageDialog(null, "Record Deleted!");
+					table_load();
+					
+					txtbname.setText("");
+					txtedition.setText("");
+					txtprice.setText("");
+					txtbname.requestFocus();
+					
+				}
+				catch (SQLException e1) 
+				{
+					e1.printStackTrace();
+				}
+			}
+		});
 		btnNewButton_1_1_1_1.setBounds(572, 363, 110, 40);
 		frame.getContentPane().add(btnNewButton_1_1_1_1);
 	}
